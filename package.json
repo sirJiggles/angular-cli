@@ -1,0 +1,37 @@
+{
+  "name": "angular-2-cli",
+  "version": "1.0.0",
+  "description": "Cli for angular 2 with different folder structure",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sirJiggles/angular-cli.git"
+  },
+  "keywords": [
+    "angular",
+    "angular",
+    "2",
+    "angular",
+    "2",
+    "cli",
+    "angular",
+    "cli"
+  ],
+  "author": "Gareth Fuller",
+  "license": "MIT",
+  "bin": {
+    "ng": "./index.js"
+  },
+  "bugs": {
+    "url": "https://github.com/sirJiggles/angular-cli/issues"
+  },
+  "homepage": "https://github.com/sirJiggles/angular-cli#readme",
+  "dependencies": {
+    "case": "^1.4.1",
+    "colors": "^1.1.2",
+    "commander": "^2.9.0"
+  }
+}
