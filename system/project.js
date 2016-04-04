@@ -35,31 +35,25 @@ module.exports = function(name) {
   fs.closeSync(fs.openSync('./app/interfaces/.gitkeep', 'w'));
 
   // Copy over the single files from the base into the new structure
-  fs.createReadStream(__dirname+'/base/.gitignore').pipe(fs.createWriteStream('./.gitignore'));
-  fs.createReadStream(__dirname+'/base/index.html').pipe(fs.createWriteStream('./index.html'));
-  fs.createReadStream(__dirname+'/base/package.json').pipe(fs.createWriteStream('./package.json'));
-  fs.createReadStream(__dirname+'/base/tsconfig.json').pipe(fs.createWriteStream('./tsconfig.json'));
-  fs.createReadStream(__dirname+'/base/typings.json').pipe(fs.createWriteStream('./typings.json'));
-  fs.createReadStream(__dirname+'/base/app/index.ts').pipe(fs.createWriteStream('./app/index.ts'));
+  cp(__dirname+'/../base/.gitignore', './.gitignore');
+  cp(__dirname+'/../base/index.html','./index.html');
+  cp(__dirname+'/../base/package.json','./package.json');
+  cp(__dirname+'/../base/tsconfig.json','./tsconfig.json');
+  cp(__dirname+'/../base/typings.json','./typings.json');
+  cp(__dirname+'/../base/app/index.ts','./app/index.ts');
 
   // Copy the app component (recursive)
-  cp('-R', __dirname+'/base/app/components/app', './app/components/');
-  
+  cp('-R', __dirname+'/../base/app/components/app', './app/components/');
+
   // replace the constants
-  replace({
-    regex: 'APPNAME',
-    replacement: name,
-    paths: ['.'],
-    recursive: true,
-    exclude: './node_modules'
-  }, function(err, done) {
-    if (err) {
-      log(err, true);
-    } else {
-      installDeps();
-    }
+  var files = find(['./index.html', './app/components/app/app.ts']);
+  files.forEach(function(file) {
+    sed('-i', 'APPNAME', name, file);
   });
 
-  log(`created the project ${name}`);
+  exec('npm set progress=false');
+  exec('npm install');
+
+  log(`created the project ${name}, cd into it then use "npm start" to run it`);
 
 };
