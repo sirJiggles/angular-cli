@@ -3,17 +3,28 @@
 var program = require('commander');
 var log = require('./util/log');
 var system = require('./system/index');
+var checkForFile = require('./util/checkForFile');
 
 program
   .version('1.0.0')
-  .arguments('<perform> <what> <name>')
-  .action(function(perform, what, name) {
+  .arguments('<perform> <what> <name> [library]')
+  .action(function(perform, what, name, library) {
+
+    if (what !== 'project') {
+      // all commands need to be run at the root of the application
+      if (!checkForFile('./package.json')) {
+        log('commands need to be run inside a angular-2-cli folder', true);
+        // break out the function
+        return true;
+      }
+    }
+
     // if generating
     if (perform === 'g' || perform === 'generate') {
 
       // check if we have the system function for the generator
       if (system().g[what]) {
-        system().g[what](name);
+        system().g[what](name, library);
       } else {
         log('unsuported generator please try again', true);
       }
