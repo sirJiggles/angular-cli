@@ -2,58 +2,107 @@
 
 var fs = require('fs');
 var log = require('../util/log');
+var cpy = require('../util/copyFile');
 var Case = require('case');
 var replace = require('replace');
+var async = require('async');
+var ncp = require('ncp');
+
+// TODO this is only used for exec, look into node child process
 require('shelljs/global');
 
-module.exports = function(name) {
+// what we export
+module.exports = run;
+
+function run(name) {
   log(`creating project ${name}`);
 
   var kebab = Case.kebab(name);
 
+  // Create and change into main folder
   fs.mkdirSync(kebab);
   process.chdir(kebab);
 
-  // Create and change into main folder
-  fs.mkdirSync('./app');
-  fs.mkdirSync('./app/components');
+  // run npm and other things side by side
+  async.parallel([
+    function(cb) { startNpm(cb); },
+    function(cb) { appSettup(cb); }
+  ], function(err) {
+    if (err) {
+      log(err, true);
+      return;
+    }
+    done(name);
+  });
+}
 
-  // create the folder structure
-  fs.mkdirSync('./app/lib');
-  fs.mkdirSync('./app/interfaces');
-  fs.mkdirSync('./app/mocks');
-  fs.mkdirSync('./app/pipes');
-  fs.mkdirSync('./app/services');
-  fs.mkdirSync('./app/styles');
+// when all said and ...
+function done(name) {
 
-  // Create the git keep
-  fs.closeSync(fs.openSync('./app/lib/.gitkeep', 'w'));
-  fs.closeSync(fs.openSync('./app/mocks/.gitkeep', 'w'));
-  fs.closeSync(fs.openSync('./app/pipes/.gitkeep', 'w'));
-  fs.closeSync(fs.openSync('./app/services/.gitkeep', 'w'));
-  fs.closeSync(fs.openSync('./app/components/.gitkeep', 'w'));
-  fs.closeSync(fs.openSync('./app/interfaces/.gitkeep', 'w'));
-
-  // Copy over the single files from the base into the new structure
-  cp(__dirname+'/../base/.gitignore', './.gitignore');
-  cp(__dirname+'/../base/index.html','./index.html');
-  cp(__dirname+'/../base/package.json','./package.json');
-  cp(__dirname+'/../base/tsconfig.json','./tsconfig.json');
-  cp(__dirname+'/../base/typings.json','./typings.json');
-  cp(__dirname+'/../base/app/index.ts','./app/index.ts');
-
-  // Copy the app component (recursive)
-  cp('-R', __dirname+'/../base/app/components/app', './app/components/');
-
-  // replace the constants
-  var files = find(['./index.html', './app/components/app/app.ts']);
-  files.forEach(function(file) {
-    sed('-i', 'APPNAME', name, file);
+  // replace constants
+  replace({
+    regex: 'APPNAME',
+    replacement: name,
+    paths: ['./index.html', './app/components/app/app.ts'],
+    recursive: false,
+    silent: true
   });
 
-  exec('npm set progress=false');
-  exec('npm install');
-
   log(`created the project ${name}, cd into it then use "npm start" to run it`);
+}
 
-};
+function startNpm(parentCallback) {
+  async.series([
+    function(cb) { cpy(__dirname+'/../base/package.json', './package.json', cb); },
+    function(cb) {
+      exec('npm install --no-progress');
+      cb();
+    }
+  ], parentCallback);
+}
+
+function appSettup(parentCallback) {
+  async.series([
+    function(cb) { setUpAppDirs(cb); },
+    function(cb) { makeFolders(cb); },
+    function(cb) { makeFiles(cb); }
+  ], parentCallback);
+}
+
+function setUpAppDirs(parentCallback) {
+  async.series([
+    function(cb) { fs.mkdir('./app', cb); },
+    function(cb) { fs.mkdir('./app/components', cb); }
+  ], parentCallback);
+}
+
+function makeFolders(parentCallback) {
+  async.parallel([
+    function(cb) { fs.mkdir('./app/lib', cb); },
+    function(cb) { fs.mkdir('./app/interfaces', cb); },
+    function(cb) { fs.mkdir('./app/mocks', cb); },
+    function(cb) { fs.mkdir('./app/pipes', cb); },
+    function(cb) { fs.mkdir('./app/services', cb); },
+    function(cb) { fs.mkdir('./app/styles', cb); }
+  ], parentCallback);
+}
+
+function makeFiles(parentCallback) {
+
+  // all file creation can be done in parallel
+  async.parallel([
+    function(cb) { fs.writeFile('./app/lib/.gitkeep', '', cb); },
+    function(cb) { fs.writeFile('./app/mocks/.gitkeep', '', cb); },
+    function(cb) { fs.writeFile('./app/pipes/.gitkeep', '', cb); },
+    function(cb) { fs.writeFile('./app/services/.gitkeep', '', cb); },
+    function(cb) { fs.writeFile('./app/components/.gitkeep', '', cb); },
+    function(cb) { fs.writeFile('./app/interfaces/.gitkeep', '', cb); },
+    function(cb) { ncp(__dirname+'/../base/app/components/app', './app/components/app/', cb); },
+    function(cb) { cpy(__dirname+'/../base/gitignore', './.gitignore', cb); },
+    function(cb) { cpy(__dirname+'/../base/app/styles/styles.css', './app/styles/styles.css', cb); },
+    function(cb) { cpy(__dirname+'/../base/index.html', './index.html', cb); },
+    function(cb) { cpy(__dirname+'/../base/tsconfig.json', './tsconfig.json', cb); },
+    function(cb) { cpy(__dirname+'/../base/typings.json', './typings.json', cb); },
+    function(cb) { cpy(__dirname+'/../base/app/index.ts', './app/index.ts', cb); }
+  ], parentCallback);
+}

@@ -9,7 +9,7 @@ import {RouteConfig, ROUTER_DIRECTIVES, ROUTER_PROVIDERS} from 'angular2/router'
 	providers: [
 		ROUTER_PROVIDERS
 	],
-	styleUrls: ['app/components/app/styles'],
+	styleUrls: ['app/components/app/styles.css'],
 	templateUrl: 'app/components/app/template.html'
 })
 

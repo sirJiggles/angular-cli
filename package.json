@@ -30,9 +30,11 @@
   },
   "homepage": "https://github.com/sirJiggles/angular-cli#readme",
   "dependencies": {
+    "async": "^2.0.0-rc.2",
     "case": "^1.4.1",
     "colors": "^1.1.2",
     "commander": "^2.9.0",
+    "ncp": "^2.0.0",
     "replace": "^0.3.0",
     "shelljs": "^0.6.0"
   }
